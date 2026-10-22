@@ -81,8 +81,14 @@ export function useClients(repo: ClientRepository = defaultRepo) {
     setClients((prev) =>
       prev.map((c) => {
         if (c.id !== clientId) return c;
+        const removed = c.interactions.find((i) => i.id === interactionId);
         const interactions = c.interactions.filter((i) => i.id !== interactionId);
-        return touch({ ...c, interactions });
+        // If that conversation was what set the last contact date, fall back to the newest remaining one.
+        const lastContactDate =
+          removed && removed.date === c.lastContactDate && !interactions.some((i) => i.date === removed.date)
+            ? (interactions[0]?.date ?? null)
+            : c.lastContactDate;
+        return touch({ ...c, interactions, lastContactDate });
       }),
     );
   }, []);
